@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Ticket {
+  id          String          @id @default(cuid())
+  title       String
+  description String
+  status      Status          @default(OPEN)
+  priority    Priority        @default(NORMAL)
+  assignedTo  String? // The user ID to whom the ticket is assigned (optional)
+  dueDate     DateTime? // Optional due date for the ticket
+  replies     Reply[] // To track replies
+  ticketType  String
+  forwardedTo String[]        @default([]) // List of user IDs the ticket is forwarded to
+  history     TicketHistory[] // To track the history of the ticket
+  tags        String[]        @default([]) // Array of tags
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Reply {
+  id               String          @id @default(cuid())
+  content          String
+  ticketId         String
+  authorId         String
+  createdAt        DateTime        @default(now())
+  ticket           Ticket          @relation(fields: [ticketId], references: [id])
+  archivedTicketId String?
+  deletedTicketId  String?
+}
+
+model TicketHistory {
+  id               String          @id @default(cuid())
+  action           String // e.g., 'Status Changed', 'Assigned to', 'Priority Updated'
+  description      String // A description of the activity
+  ticketId         String
+  createdAt        DateTime        @default(now())
+  ticket           Ticket          @relation(fields: [ticketId], references: [id])
+  archivedTicketId String?
+  deletedTicketId  String?
+}
+
+
+
+enum Status {
+  OPEN
+  CLOSED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+}
